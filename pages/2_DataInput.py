@@ -6,32 +6,47 @@ st.title('Data input')
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from Tests.apiv2 import Api
 
-username = os.getenv('username')
-password = os.getenv('password')
+
+try:
+    token = st.session_state.token
+    username = st.session_state.username
+    password = st.session_state.password
+except AttributeError:
+    st.error('Please login in first')
+    token = None
+    username = None
+    password = None
 #create fields for date, speedometer, distance, totalcost, garage, liters purchased
 
+api = Api(username, password)
 
-car = get_cars(get_token(username, password))
+
+
+
+car = api.get_cars(token)
 cars_df = pd.DataFrame(car)
 car_choice = st.selectbox('Select a car', cars_df['registration'])
 try:
-    log = get_logs(get_token(username, password), car_choice)
+    log = api.get_logs(token, car_choice)
     logs_df = pd.DataFrame(log)
     st.write(logs_df.tail(1))
 except Exception as e:
     st.error('No logs for this car')
+with st.form('Data input'):
+    date = st.date_input('Date')
+    speedometer = st.number_input('Speedometer')
+    distance = st.number_input('Distance')
+    garage = st.text_input('Garage')
+    totalcost = st.number_input('Total cost')
+    liters = st.number_input('Liters purchased')
+    submitted = st.form_submit_button('Submit')
 
-date = st.date_input('Date')
-speedometer = st.number_input('Speedometer')
-distance = st.number_input('Distance')
-garage = st.text_input('Garage')
-totalcost = st.number_input('Total cost')
-liters = st.number_input('Liters purchased')
 
-if st.button('Add log'):
+if submitted:
     try:
-        add_log(get_token(username, password), car_choice, date, speedometer, distance, totalcost, garage, liters)
+        api.add_log(token, car_choice, date, speedometer, distance, totalcost, garage, liters)
         st.success('Log added')
         #clear fields
         date = ''
